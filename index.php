@@ -2,7 +2,7 @@
 require_once 'conexion.php';
 
 
-if($_GET['Vehiculos']){
+if(isset($_GET['Vehiculos'])){
     
 $db = new Database();
 
