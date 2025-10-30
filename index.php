@@ -21,4 +21,24 @@ try {
     ]);
     }
 }
+
+if(isset($_GET['mantenimientos'])){
+    
+$db = new Database();
+
+try {
+    $sql = "SELECT * FROM mantenimientos ORDER BY id_mantenimiento DESC";
+    $vehiculos = $db->fetchAll($sql);
+
+    echo json_encode([
+        "success" => true,
+        "data" => $vehiculos
+    ]);
+} catch (Exception $e) {
+    echo json_encode([
+        "success" => false,
+        "error" => $e->getMessage()
+    ]);
+    }
+}
 ?>
