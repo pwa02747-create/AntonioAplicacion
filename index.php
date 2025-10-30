@@ -4,7 +4,7 @@ require_once 'conexion.php';
 $db = new Database();
 
 try {
-    $sql = "SELECT * FROM vehiculos ORDER BY id DESC";
+    $sql = "SELECT * FROM vehiculos ORDER BY id_carro DESC";
     $vehiculos = $db->fetchAll($sql);
 
     echo json_encode([
