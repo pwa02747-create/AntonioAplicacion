@@ -1,6 +1,9 @@
 <?php
 require_once 'conexion.php';
 
+
+if($_GET['Vehiculos']){
+    
 $db = new Database();
 
 try {
@@ -16,5 +19,6 @@ try {
         "success" => false,
         "error" => $e->getMessage()
     ]);
+    }
 }
 ?>
