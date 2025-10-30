@@ -1,14 +1,20 @@
 <?php
-require_once 'conexion.php';
+require_once 'database.php';
 
 $db = new Database();
 
-$sql = "INSERT INTO vehiculos (placa, marca, modelo) VALUES (:placa, :marca, :modelo)";
-$params = [
-  ':placa' => 'XYZ-999',
-  ':marca' => 'Nissan',
-  ':modelo' => 'Versa'
-];
-$id = $db->execute($sql, $params, true);
+try {
+    $sql = "SELECT id, placa, marca, modelo FROM vehiculos ORDER BY id DESC";
+    $vehiculos = $db->fetchAll($sql);
 
-echo json_encode(["success" => true, "vehiculo_id" => $id]);
+    echo json_encode([
+        "success" => true,
+        "data" => $vehiculos
+    ]);
+} catch (Exception $e) {
+    echo json_encode([
+        "success" => false,
+        "error" => $e->getMessage()
+    ]);
+}
+?>
