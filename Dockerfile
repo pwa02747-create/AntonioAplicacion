@@ -28,8 +28,8 @@ COPY . .
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
-# Exponer puerto 80 para Apache
-EXPOSE 80
+# Exponer el puerto dinámico que Render asigna
+EXPOSE 10000
 
-# Iniciar Apache al levantar el contenedor
-CMD ["apache2-foreground"]
+# Configurar Apache para escuchar en el puerto dinámico
+CMD ["bash", "-c", "echo 'Listen 0.0.0.0:${PORT}' >> /etc/apache2/ports.conf && apache2-foreground"]
