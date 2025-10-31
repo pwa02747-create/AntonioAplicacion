@@ -121,52 +121,56 @@ elseif (isset($_GET["Vehiculo"])) {
     ]);
     exit;
 }
-elseif (isset($_GET["eliminarEtiqueta"])) {    
+elseif (isset($_GET["eliminarVehiculo"])) {    
     $input = json_decode(file_get_contents("php://input"), true);
     $id = $input['id'] ?? null;
    
-    $delete = $con->delete("etiquetas");
-    $delete->where('idEtiqueta = ?', [$id]);
+    $delete = $con->delete("vehiculos");
+    $delete->where('id_carro = ?', [$id]);
     $delete->execute();   
-    $title = 'Notificación';
-    $body  = 'Etiqueta N° '.$id.' Eliminada';
+    // $title = 'Notificación';
+    // $body  = 'Etiqueta N° '.$id.' Eliminada';
 
-    $Resultado = EnviarNotificacion($con, $id_usuario, $title, $body);
-    echo json_encode(["status" => "ok", "Notificacion" => $Resultado]);    exit;
+    // $Resultado = EnviarNotificacion($con, $id_usuario, $title, $body);
+    echo json_encode(["status" => "ok"]);    exit;
 }
-elseif (isset($_GET["guardarEtiqueta"])) {
+    
+elseif (isset($_GET["guardarVehiculo"])) {
     try {
-        $con->query("ALTER TABLE etiquetas MODIFY COLUMN idEtiqueta INT AUTO_INCREMENT")->execute();
+        $con->query("ALTER TABLE vehiculos MODIFY COLUMN id_carro INT AUTO_INCREMENT")->execute();
     } catch (PDOException $e) {}
     
     $input = json_decode(file_get_contents('php://input'), true);
-    $nombreEtiqueta = $input['nombreEtiqueta'] ?? null;
+    $placa = $input['Placa'] ?? null;
+    $marca = $input['Marca'] ?? null;
+    $modelo = $input['Modelo'] ?? null;
 
-    if (!empty($nombreEtiqueta)) {
-        $insert = $con->Insert("etiquetas");
-        $insert->create("nombreEtiqueta", $nombreEtiqueta);
+    if (!empty($placa)) {
+        $insert = $con->Insert("vehiculos");
+        $insert->create("Placa", $placa);
+        $insert->create("Marca", $marca);
+        $insert->create("Modelo", $modelo);
         $insert->execute();
         
-        $title = 'Notificación';
-        $body  = 'Nueva Etiqueta Insertada: '.$nombreEtiqueta;
-        $Resultado = EnviarNotificacion($con, $id_usuario, $title, $body);
-        echo json_encode(["status" => "ok: Etiqueta guardada", "Notificacion" => $Resultado]);  exit;
+        echo json_encode(["status" => "ok: Registro guardado"]);  exit;
     } 
 }
-elseif (isset($_GET['obtenerEtiqueta'])) {
+    
+elseif (isset($_GET['obtenerVehiculo'])) {
     $id = $_GET['id'] ?? null;
 
-    $search = $con->select("etiquetas");
-    $search->where("idEtiqueta", "=", $id);
+    $search = $con->select("vehiculos");
+    $search->where("id_carro", "=", $id);
     
-    $etiqueta = $search->fetch();
-    if ($etiqueta) {
-        echo json_encode($etiqueta); exit;
+    $ve = $search->fetch();
+    if ($ve) {
+        echo json_encode($ve); exit;
     }else{
-        echo json_encode(["status" => "error", "mensaje" => "Etiqueta no encontrada"]);
+        echo json_encode(["status" => "error", "mensaje" => "vehiculo no encontrado"]);
         exit;
     } 
 }   
+    
 elseif (isset($_GET["Emparejamiento"])) {    
     $offset = isset($_GET["start"]) ? intval($_GET["start"]) : 0;
     $limit  = isset($_GET["length"]) ? intval($_GET["length"]) : 10;
@@ -486,3 +490,4 @@ if($acceso){
 //     ]); exit;
 // }
 ?>
+
