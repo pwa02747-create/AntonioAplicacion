@@ -11,11 +11,10 @@ $contrasena     = "123";
 
 $select = $con->select("usuarios", "idUsuario, usuario, password, rol, EmailToken, Preferencias");
 $select->where("usuario", "=", $nombre_usuario)->where("password", "=", $contrasena);
-$usuarios = $select->fetch();
+$usuarios = $select->fetchAll();
 
 if (count($usuarios)) {
     $usuario = $usuarios[0];
-
     $emailToken = $usuario["EmailToken"];
 
     if ($emailToken) {
