@@ -39,13 +39,13 @@ $firebase = (new Kreait\Firebase\Factory)
     ->createMessaging();
 
 // Conexión a MySQL
-$con = new Conexion(array(
+$con = new Conexion([
     "tipo"       => "mysql",
     "servidor"   => "hopper.proxy.rlwy.net",
     "puerto"     => 19011,
     "bd"         => "railway",
     "usuario"    => "root",
     "contrasena" => "XDbSRyQSXGpPaFMswLqBtyodyAKsHSdu"
-));
+]);
 
 ?>
