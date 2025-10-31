@@ -9,8 +9,7 @@ $headers = getallheaders();
 //     echo "Token requerido.";
 //     exit;
 // }
-
-$token = str_replace("Bearer ", "", $headers["Authorization"]);
+// $token = str_replace("Bearer ", "", $headers["Authorization"]);
 
 // try {
 //     $decoded = Firebase\JWT\JWT::decode($token, new Firebase\JWT\Key($jwtKey, "HS256"));
@@ -324,6 +323,7 @@ elseif (isset($_GET["ventas"])) {
 
 
 ?>
+
 
 
 
