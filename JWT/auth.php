@@ -8,7 +8,7 @@ $contrasena     = $_POST["contrasena"];
 $select = $con->select("usuarios", "idUsuario, usuario, password, rol, EmailToken, Preferencias");
 $select->where("usuario", "=", $nombre_usuario);
 $select->where_and("password", "=", $contrasena);
-$usuarios = $select->execute();
+$usuarios = $select->fetch();
 
 if (count($usuarios)) {
     $usuario = $usuarios[0];
