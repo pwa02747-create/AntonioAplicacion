@@ -5,10 +5,9 @@ require "config/index.php";
 $nombre_usuario = $_POST["usuario"];
 $contrasena     = $_POST["contrasena"];
 
-$select = $con->select("usuarios", "idUsuario, usuario, password, rol, EmailToken");
+$select = $con->select("usuarios", "idUsuario, usuario, password, rol, EmailToken, Preferencias");
 $select->where("usuario", "=", $nombre_usuario);
 $select->where_and("password", "=", $contrasena);
-
 $usuarios = $select->execute();
 
 if (count($usuarios)) {
@@ -24,7 +23,7 @@ if (count($usuarios)) {
     $payload = [
         "iat" => time(),
         "exp" => time() + (60 * 60 * 24 * 7),
-        "sub" => $usuario["Id_Usuario"] . "/" . $usuario["Tipo_Usuario"]
+        "sub" => $usuario["idUsuario"] . "/" . $usuario["rol"]
     ];
 
     $jwt = Firebase\JWT\JWT::encode($payload, $jwtKey, "HS256");
@@ -34,5 +33,4 @@ if (count($usuarios)) {
 }
 
 echo "error";
-
 ?>
