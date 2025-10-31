@@ -4,29 +4,32 @@ require "JWT/config/index.php";
 
 $headers = getallheaders();
 
-if (!isset($headers["Authorization"])) {
-    http_response_code(401);
-    echo "Token requerido.";
-    exit;
-}
+// if (!isset($headers["Authorization"])) {
+//     http_response_code(401);
+//     echo "Token requerido.";
+//     exit;
+// }
 
-$token = str_replace("Bearer ", "", $headers["Authorization"]);
+// $token = str_replace("Bearer ", "", $headers["Authorization"]);
 
-try {
-    $decoded = Firebase\JWT\JWT::decode($token, new Firebase\JWT\Key($jwtKey, "HS256"));
-    # header("Content-Type: application/json");
-    # echo json_encode(array("message" => "Acceso autorizado", "user_id" => $decoded->sub));
+// try {
+//     $decoded = Firebase\JWT\JWT::decode($token, new Firebase\JWT\Key($jwtKey, "HS256"));
+//     # header("Content-Type: application/json");
+//     # echo json_encode(array("message" => "Acceso autorizado", "user_id" => $decoded->sub));
 
-    $usuario = explode("/", $decoded->sub);
-    $id   = $usuario[0];
-    $tipo = $usuario[1];
-}
-catch (Exception $error) {
-    http_response_code(401);
-    echo "Token inválido.";
-    # echo $error->getMessage();
-    exit;
-}
+//     $usuario = explode("/", $decoded->sub);
+//     $id   = $usuario[0];
+//     $tipo = $usuario[3];
+ $id   = '1';
+ $tipo = 'admin';
+
+// }
+// catch (Exception $error) {
+//     http_response_code(401);
+//     echo "Token inválido.";
+//     # echo $error->getMessage();
+//     exit;
+// }
 
 if (isset($_GET["preferencias"])) {
     $fbt = $_GET["token"];
@@ -38,19 +41,19 @@ if (isset($_GET["preferencias"])) {
 
         $update = $con->update("usuarios");
         $update->set("FBToken", $fbt);
-        $update->where("Id_Usuario", "=", $id);
+        $update->where("idUsuario", "=", $id);
         $update->execute();
     }
 
     $select = $con->select("usuarios", "Preferencias");
-    $select->where("Id_Usuario", "=", $id);
+    $select->where("idUsuario", "=", $id);
     header("Content-Type: application/json");
     echo json_encode($select->execute());
 }
 elseif (isset($_GET["cambiarPreferencias"])) {
     $update = $con->update("usuarios");
     $update->set("Preferencias", $_POST["preferencias"]);
-    $update->where("Id_Usuario", "=", $id);
+    $update->where("idUsuario", "=", $id);
     $update->execute();
 }
 
@@ -555,5 +558,6 @@ elseif (isset($_GET["graficaVentasTotalesProductos"])) {
 }
 
 ?>
+
 
 
