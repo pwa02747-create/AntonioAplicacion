@@ -3,11 +3,11 @@ header("Content-Type: application/json"); // Siempre enviar JSON
 
 require "config/index.php";
 
-// $nombre_usuario = $_POST["usuario"] ?? "";
-// $contrasena     = $_POST["contrasena"] ?? "";
+$nombre_usuario = $_POST["usuario"] ?? "";
+$contrasena     = $_POST["contrasena"] ?? "";
 
-$nombre_usuario = "Rosendo";
-$contrasena     = "123";
+// $nombre_usuario = "Rosendo";
+// $contrasena     = "123";
 
 if (!$nombre_usuario || !$contrasena) {
     http_response_code(400);
