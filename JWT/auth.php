@@ -2,12 +2,15 @@
 
 require "config/index.php";
 
-$nombre_usuario = $_POST["usuario"];
-$contrasena     = $_POST["contrasena"];
+// $nombre_usuario = $_POST["usuario"] ?? null;
+// $contrasena     = $_POST["contrasena"] ?? null;
+
+$nombre_usuario = "rosendo";
+$contrasena     = "123";
+
 
 $select = $con->select("usuarios", "idUsuario, usuario, password, rol, EmailToken, Preferencias");
-$select->where("usuario", "=", $nombre_usuario);
-$select->where_and("password", "=", $contrasena);
+$select->where("usuario", "=", $nombre_usuario)->where("password", "=", $contrasena);
 $usuarios = $select->fetch();
 
 if (count($usuarios)) {
