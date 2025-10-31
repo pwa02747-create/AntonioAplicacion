@@ -1,18 +1,19 @@
 <?php require_once "JWT/config/index.php";
 // ob_start(); 
 
-function modificarMov($con, $id_input, $monto, $fechaHora){        
-    $search = $con->select("movimientos");
-    $search->where("idMovimientos", "=", $id_input);
+function modificarVeh($con, $id_input, $placa, $marca, $modelo){        
+    $search = $con->select("vehiculos");
+    $search->where("id_carro", "=", $id_input);
     $fetch = $search->fetch();
         
     if ($fetch) {
-        $update = $con->update("movimientos");
-        $update->set("monto", $monto);
-        $update->set("fechaHora", $fechaHora);
-        $update->where("idMovimientos", "=", $id_input);
+        $update = $con->update("vehiculos");
+        $update->set("Placa", $placa);
+        $update->set("Marca", $marca);
+        $update->set("Modelo", $modelo);
+        $update->where("id_carro", "=", $id_input);
         $update->execute();       
-        return "Movimiento '$monto' y fecha:' $fechaHora  N° $id_input modificado.";
+        return "vehiculo: '$placa' de marca: ' $marca  del N° $id_input modificado.";
     } else { return "Modificación fallida. Movimiento no encontrado.";  }
 }
 
@@ -198,8 +199,10 @@ elseif (isset($_GET['modificarVehiculo'])) {
     $input = json_decode(file_get_contents("php://input"), true);
     $id_input = $input['id'] ?? null;
     $placa = $input['Placa'] ?? null;
+    $marca = $input['Marca'] ?? null;
+    $modelo = $input['Modelo'] ?? null;
 
-    if (!$id_input || !$placa) {
+    if (!$id_input || !$placa || !marca || !modelo ) {
         http_response_code(400);
         echo json_encode(["status" => "error", "mensaje" => "Campos faltantes (id, nombreEtiqueta)"]);
     exit; 
@@ -212,9 +215,9 @@ elseif (isset($_GET['modificarVehiculo'])) {
  
 if($acceso){
     if ($acceso === 'Admin') {
-        $mod_Etiqueta = modEtiqueta($con, $id_input, $nombreEtiqueta);
-        $Resultado = EnviarNotificacion($con, $id_usuario, $title, $body);
-        echo json_encode(["status" => "Exito", "accion" => $mod_Etiqueta, "Notificacion" => $Resultado]);
+        $mod_veh = modificarVeh($con, $id_input, $placa, $marca, $modelo);
+        // $Resultado = EnviarNotificacion($con, $id_usuario, $title, $body);
+        echo json_encode(["status" => "Exito", "accion" => $mod_veh]);
         exit;
     }   
 } else {
@@ -261,5 +264,6 @@ if($acceso){
 //     ]); exit;
 // }
 ?>
+
 
 
