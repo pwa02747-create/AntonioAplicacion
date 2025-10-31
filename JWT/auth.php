@@ -2,12 +2,15 @@
 
 require "config/index.php";
 
-// $nombre_usuario = $_POST["usuario"] ?? null;
-// $contrasena     = $_POST["contrasena"] ?? null;
+$nombre_usuario = $_POST["usuario"] ?? null;
+$contrasena     = $_POST["contrasena"] ?? null;
 
-$nombre_usuario = "rosendo";
-$contrasena     = "123";
+// $nombre_usuario = "rosendo";
+// $contrasena     = "123";
 
+if(!nombre_usuario || !$contrena){
+    
+}
 
 $select = $con->select("usuarios", "idUsuario, usuario, password, rol, EmailToken, Preferencias");
 $select->where("usuario", "=", $nombre_usuario)->where("password", "=", $contrasena);
