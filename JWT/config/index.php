@@ -16,25 +16,29 @@ if ($_SERVER["REQUEST_METHOD"] == "OPTIONS") {
 }
 
 date_default_timezone_set("America/Matamoros");
+
 require __DIR__ . '/../../vendor/autoload.php';
 
 require "conexion.php";
 require "enviarCorreo.php";
-# mkdir firebase-php-jwt
-# cd firebase-php-jwt
-# composer require firebase/php-jwt
-// require "firebase-php-jwt/vendor/autoload.php";
-# mkdir kreait-firebase-php
-# cd kreait-firebase-php
-# composer require kreait/firebase-php
-# extensiones php -----> curl, json, openssl, mbstring o gmp
-// require "kreait-firebase-php/vendor/autoload.php";
 
+// Clave JWT
 $jwtKey = "Test12345";
 
-$serviceAccountJson = json_decode('', true);
-$firebase = (new Kreait\Firebase\Factory)->withServiceAccount($serviceAccountJson)->createMessaging();
+// Inicializar Firebase usando variable de entorno
+$serviceAccountJson = getenv('FIREBASE_CREDENTIALS');
 
+if (!$serviceAccountJson) {
+    throw new Exception('FIREBASE_CREDENTIALS no está definido en el entorno');
+}
+
+$serviceAccountArray = json_decode($serviceAccountJson, true);
+
+$firebase = (new Kreait\Firebase\Factory)
+    ->withServiceAccount($serviceAccountArray)
+    ->createMessaging();
+
+// Conexión a MySQL
 $con = new Conexion(array(
     "tipo"       => "mysql",
     "servidor"   => "hopper.proxy.rlwy.net",
