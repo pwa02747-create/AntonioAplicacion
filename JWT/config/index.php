@@ -16,7 +16,7 @@ if ($_SERVER["REQUEST_METHOD"] == "OPTIONS") {
 }
 
 date_default_timezone_set("America/Matamoros");
-require __DIR__ . '/vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 
 require "conexion.php";
 require "enviarCorreo.php";
