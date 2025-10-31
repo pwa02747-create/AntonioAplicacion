@@ -48,4 +48,13 @@ $con = new Conexion([
     "contrasena" => "XDbSRyQSXGpPaFMswLqBtyodyAKsHSdu"
 ]);
 
+$config = [
+    "tipo"       => "mysql",
+    "servidor"   => "hopper.proxy.rlwy.net",
+    "puerto"     => 19011,
+    "bd"         => "railway",
+    "usuario"    => "root",
+    "contrasena" => "XDbSRyQSXGpPaFMswLqBtyodyAKsHSdu"
+];
+
 ?>
