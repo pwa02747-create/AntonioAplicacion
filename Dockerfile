@@ -3,7 +3,7 @@ FROM php:8.2-apache
 # Habilitar mod_rewrite
 RUN a2enmod rewrite
 
-# Instalar dependencias PHP
+# Instalar dependencias PHP y extensiones necesarias
 RUN apt-get update && apt-get install -y \
     unzip git libzip-dev libonig-dev libcurl4-openssl-dev libgmp-dev zlib1g-dev \
     && docker-php-ext-install pdo pdo_mysql mbstring zip gmp
@@ -21,5 +21,8 @@ RUN composer install --no-dev --optimize-autoloader
 
 # Copiar el resto de la aplicación
 COPY . .
+
+# Dar permisos al directorio
+RUN chown -R www-data:www-data /var/www/html
 
 EXPOSE 80
