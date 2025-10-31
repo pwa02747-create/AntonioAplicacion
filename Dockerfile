@@ -15,7 +15,8 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 # Copiar archivos de Composer primero para aprovechar cache
-COPY composer.json composer.lock ./
+COPY composer.json 
+# composer.lock ./
 
 # Instalar dependencias PHP y generar autoloader optimizado
 RUN composer install --no-dev --optimize-autoloader
