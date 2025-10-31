@@ -3,14 +3,15 @@ class Conexion {
     private $con;
 
    function __construct($config) {
-    $host = $config['servidor'];
-    $usuario = $config['usuario'];
-    $clave = $config['contrasena'];
-    $base = $config['bd'];
-    $tipo = $config['tipo'] ?? 'mysql';
-    $port = $config['port'];   
+        $tipo = 'mysql';
+        $host = 'hopper.proxy.rlwy.net';
+        $port = '19011';
+        $base = 'railway';
+        $usuario = 'root';
+        $clave = 'XDbSRyQSXGpPaFMswLqBtyodyAKsHSdu';
 
-    $dsn = "$tipo:host=$host;port=$port;dbname=$base;charset=utf8mb4";
+        $dsn = "$tipo:host=$host;port=$port;dbname=$base;charset=utf8mb4";
+
     $this->con = new PDO($dsn, $usuario, $clave, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
     ]);
@@ -309,3 +310,4 @@ class Delete {
         return $stmt;
     }
 }
+
