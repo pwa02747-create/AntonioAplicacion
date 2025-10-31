@@ -36,10 +36,11 @@ $firebase = (new Kreait\Firebase\Factory)->withServiceAccount($serviceAccountJso
 
 $con = new Conexion(array(
     "tipo"       => "mysql",
-    "servidor"   => "localhost",
-    "bd"         => "practicas",
+    "servidor"   => "hopper.proxy.rlwy.net",
+    "puerto"     => 19011,
+    "bd"         => "railway",
     "usuario"    => "root",
-    "contrasena" => "Test12345"
+    "contrasena" => "XDbSRyQSXGpPaFMswLqBtyodyAKsHSdu"
 ));
 
 ?>
