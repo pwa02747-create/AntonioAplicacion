@@ -123,6 +123,10 @@ class Select {
         return $this;
     }
 
+    public function where_and($campo, $operador, $valor) {
+        return $this->where($campo, $operador, $valor);
+    }
+
     public function groupby($group) {
         $this->groupby = "GROUP BY $group";
         return $this;
@@ -311,5 +315,6 @@ class Delete {
         return $stmt;
     }
 }
+
 
 
