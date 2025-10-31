@@ -1,6 +1,6 @@
 <?php
 
-require "config/index.php";
+require "JWT/config/index.php";
 
 $headers = getallheaders();
 
@@ -555,4 +555,5 @@ elseif (isset($_GET["graficaVentasTotalesProductos"])) {
 }
 
 ?>
+
 
