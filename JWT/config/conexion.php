@@ -1,790 +1,311 @@
 <?php
-
-/**
- * Clases para conexiones de Bases de Datos MySQL/SQL Server
- * @desc Contiene cinco clases:
- *      Conexion: Permite realizar la conexión con la BD
- *      Insert:   Permite realizar un insert con anti-inyección de código con todas sus clausulas
- *      Select:   Permite realizar un select con anti-inyección de código con todas sus clausulas
- *      Update:   Permite realizar un update con anti-inyección de código con todas sus clausulas
- *      Delete:   Permite realizar un delete con anti-inyección de código con todas sus clausulas
- * @author Ing. Domingo Fraga Hernandez
- */
-
 class Conexion {
-    /**
-    * Objecto PDO para ejecutar consultas en la Base de Datos
-    */
-    public $con;
+    private $con;
 
-    /**
-    * Clausula WHERE
-    */
-    public $where;
+   function __construct($config) {
+    $host = $config['servidor'];
+    $usuario = $config['usuario'];
+    $clave = $config['contrasena'];
+    $base = $config['bd'];
+    $tipo = $config['tipo'] ?? 'mysql';
+    $port = $config['port'];   
 
-    /**
-    * Clausula HAVING
-    */
-    public $having;
+    $dsn = "$tipo:host=$host;port=$port;dbname=$base;charset=utf8mb4";
+    $this->con = new PDO($dsn, $usuario, $clave, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+    ]);
+}
 
-    /**
-    * Arreglo de valores para condiciones en el WHERE
-    */
-    public $binds;
-
-    /**
-    * Constructor
-    *
-    * @param array $opt Especificaciones de la conexión
-    * "tipo" => "mysql"|"sqlsrv"
-    *   "servidor"   => Servidor de conexión                  Por defecto localhost
-    *   "bd"         => Nombre de la Base de Datos            Por defecto prueba
-    *   "usuario"    => Usuario del servidor de Base de Datos Por defecto root
-    *   "contrasena" => Contraseña del Usuario                Por defecto nada
-    * @return void  Solo inicializa el objeto PDO $con
-    */
-    function __construct($opt) {
-        $con = false;
-
-        if (is_array($opt)) {
-            try {
-                $tipo     = $opt["tipo"];
-                $bd       = $opt["bd"];
-                $servidor = isset($opt["servidor"]) ? $opt["servidor"] : NULL;
-
-                if ($tipo == "mysql") {
-                    if (!isset($opt["usuario"])) {
-                        $opt["usuario"] = "root";
-                    }
-
-                    if (!isset($opt["contrasena"])) {
-                        $opt["contrasena"] = "";
-                    }
-
-                    $usuario    = $opt["usuario"];
-                    $contrasena = $opt["contrasena"];
-
-                    $con = new PDO("mysql:host=$servidor;dbname=$bd", $usuario, $contrasena);
-                }
-                elseif ($tipo == "sqlsrv") {
-                    if (!isset($opt["usuario"])) {
-                        $opt["usuario"] = null;
-                    }
-
-                    if (!isset($opt["contrasena"])) {
-                        $opt["contrasena"] = null;
-                    }
-
-                    $usuario    = $opt["usuario"];
-                    $contrasena = $opt["contrasena"];
-
-                    $con = new PDO("sqlsrv:Server=$servidor;Database=$bd", $usuario, $contrasena);
-                }
-                elseif ($tipo == "sqlite") {
-                    $con = new PDO("sqlite:$bd");
-                }
-            }
-            catch (PDOException $e) {
-                $con = false;
-            }
-        }
-
-        $this->con = $con;
+    function query($sql, $param = []) {
+        $stmt = $this->con->prepare($sql);
+        $stmt->execute($param);
+        return $stmt;
     }
 
-    /**
-    * Utilización del método query del objeto PDO $con
-    *
-    * @param string $sql Consulta SQL
-    * @return object
-    */
-    function query($sql) {
-        return $this->con->query($sql);
+    function select($tabla, $campos = "*") {
+        return new Select($this->con, $tabla, $campos);
     }
 
-    /**
-    * Utilización del método prepare del objeto PDO $con
-    *
-    * @param string $sql Consulta SQL
-    * @return object
-    */
-    function prepare($sql) {
-        return $this->con->prepare($sql);
+    function insert($tabla) {
+        return new Insert($this->con, $tabla);
     }
 
-    /**
-    * Utilización del método lastInsertId del objeto PDO $con
-    *
-    * @return void Solo retorna el Id del último registro insertado
-    */
-    function lastInsertId() {
-        return $this->con->lastInsertId();
+    function update($tabla) {
+        return new Update($this->con, $tabla);
     }
 
-    /**
-    * Ejecución de consulta (Solo aplica si te aparecen caracteres extraños
-    * al consultar información)
-    *
-    * @return void Solo ejecuta una consulta
-    */
-    function q_utf8() {
-        $this->query("SET names 'utf8'");
+    function delete($tabla) {
+        return new Delete($this->con, $tabla);
     }
 
-    /**
-    * Ejecución de consulta (Solo aplica si te aparecen errores al tratar de
-    * utilizar la clausula GROUP BY)
-    *
-    * @return void Solo ejecuta una consulta
-    */
     function support_groupby() {
-        $this->query("SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
-    }
-
-    /**
-    * Ejecución de consulta para insertar
-    *
-    * @param string        $tableName Nombre de la tabla
-    * @param string        $intos     Campos a insertar
-    * @return object Instancia la clase insert
-    */
-    function insert($tableName, $intos) {
-        /**
-        * Con la instancia que retorna, tendrás acceso a métodos como:
-        * - value     Para establecer los campos a insertar
-        * - execute   Para convertir la información resultante de la consulta en un arreglo bidimensional
-        */
-        return new Insert($this->con, "INSERT INTO $tableName($intos)");
-    }
-
-    /**
-    * Ejecución de consulta para seleccionar
-    *
-    * @param string $tableName Nombre de la tabla
-    * @param string $selects   Campos a seleccionar Por defecto *
-    * @return object Instancia la clase select
-    */
-    function select($tableName, $selects="*") {
-        /**
-        * Con la instancia que retorna, tendrás acceso a métodos como:
-        * - innerjoin Para hacer uso del INNER JOIN
-        * - where     Para condiciones
-        * - where_and Para unir condiciones con el operador AND
-        * - where_or  Para unir condiciones con el operador OR
-        * - grouoby   Para hacer uso del GROUP BY
-        * - orderby   Para hacer uso del ORDER BY
-        * - execute   Para convertir la información resultante de la consulta en un arreglo bidimensional
-        */
-        return new Select($this->con, "SELECT $selects FROM $tableName");
-    }
-
-    /**
-    * Ejecución de consulta para actualizar
-    *
-    * @param string $tableName Nombre de la tabla
-    * @return object Instancia la clase update
-    */
-    function update($tableName) {
-        /**
-        * Con la instancia que retorna, tendrás acceso a métodos como:
-        * - set       Para establecer los campos a actualizar
-        * - where     Para condiciones
-        * - where_and Para unir condiciones con el operador AND
-        * - where_or  Para unir condiciones con el operador OR
-        * - execute   Para convertir la información resultante en un número
-        */
-        return new Update($this->con, "UPDATE $tableName");
-    }
-
-    /**
-    * Ejecución de consulta para eliminar
-    *
-    * @param string $tableName Nombre de la tabla
-    * @return int Numero de filas afectadas
-    */
-    function delete($tableName) {
-        /**
-        * Con la instancia que retorna, tendrás acceso a métodos como:
-        * - where     Para condiciones
-        * - where_and Para unir condiciones con el operador AND
-        * - where_or  Para unir condiciones con el operador OR
-        * - execute   Para convertir la información resultante en un número
-        */
-        return new Delete($this->con, "DELETE FROM $tableName");
-    }
-
-    /**
-    * Ejecución de consulta (Solo se aplicará a una tabla con AUTO_INCREMENT
-    * después de una eliminación)
-    *
-    * @param string $tableName Nombre de la tabla
-    * @param string $cam       Nombre del campo con propiedad AUTO_INCREMENT
-    * @return void Reestablece la serie numérica Id de la tabla
-    */
-    function truncate_AI($tableName, $cam) {
-        $sql = "SET @num := 0;
-        UPDATE $tableName SET $cam = @num := (@num+1);
-        ALTER TABLE $tableName AUTO_INCREMENT = 1;";
-
-        $this->query($sql);
-    }
-
-
-
-    /**
-    * Función para añadir condiciones en la clausula WHERE/HAVING
-    *
-    * @param string $clause Clausula
-    * @param string $cam Campo condición
-    * @param string $rel Operador relacional
-    * @param string $val Valor para condición
-    * @param string $pattern Servirá para maquetar el puntero del valor de condición
-    * @return void Añadidura de condición a la clausula WHERE
-    */
-    function addCondition($clause, $cam, $rel, $val, $pattern) {
-        if ($clause == "WHERE") {
-            $where      = $this->where;
-            $clause_cnt = $where;
-        }
-        elseif ($clause == "HAVING") {
-            $having = $this->having;
-            $clause_cnt = $having;
-        }
-
-        $clause_cnt = "$clause_cnt $pattern";
-        $clause_cnt = preg_replace('/{cam}/', $cam, $clause_cnt);
-        $clause_cnt = preg_replace('/{rel}/', $rel, $clause_cnt);
-
-        $binds = $this->binds;
-
-        if (strpos($clause_cnt, "{val}") !== false) {
-            $count      = 0;
-            $clause_cnt = preg_replace('/{val}/', "?", $clause_cnt, -1, $count);
-    
-            if ($rel == "LIKE") {
-                $val = "%$val%";
-            }
-    
-            if ($count > 1) {
-                for ($i = 1; $i < $count; $i++) {
-                    $binds[] = $val;
-                }
-            }
-    
-            $binds[] = $val;
-        }
-
-        $this->binds = $binds;
-
-        if ($clause == "WHERE") {
-            $this->where = $clause_cnt;
-        }
-        elseif ($clause == "HAVING") {
-            $this->having = $clause_cnt;
-        }
-    }
-
-    /**
-    * Función para añadir condiciones en la clausula WHERE/HAVING (Une condiciones con el /AND/OR)
-    *
-    * @param string $cam Campo condición
-    * @param string $rel Operador relacional
-    * @param string $val Valor para condición
-    * @param string $pattern Servirá para maquetar el puntero del valor de condición
-    * @return void Añadidura de condición a la clausula WHERE
-    */
-    function clause_cnt($clause, $cnt, $cam, $rel, $val, $pattern) {
-        if ($clause == "WHERE") {
-            $where       = $this->where;
-            $where       = ($cnt ? "" : $clause) . "$where $cnt";
-            $this->where = $where;
-        }
-        elseif ($clause == "HAVING") {
-            $having       = $this->having;
-            $having       = ($cnt ? "" : $clause) . "$having $cnt";
-            $this->having = $having;
-        }
-
-        $this->addCondition($clause, $cam, $rel, $val, $pattern);
-    }
-
-    /**
-    * Función para añadir condiciones en la clausula WHERE (Inicializa la clausula)
-    *
-    */
-    function where($cam, $rel, $val, $pattern="{cam} {rel} {val}") {
-        $this->clause_cnt("WHERE", "", $cam, $rel, $val, $pattern);
-    }
-
-    /**
-    * Función para añadir condiciones en la clausula WHERE (Une condiciones con el AND)
-    */
-    function where_and($cam, $rel, $val, $pattern="{cam} {rel} {val}") {
-        $this->clause_cnt("WHERE", "AND", $cam, $rel, $val, $pattern);
-    }
-
-    /**
-    * Función para añadir condiciones en la clausula WHERE (Une condiciones con el OR)
-    */
-    function where_or($cam, $rel, $val, $pattern="{cam} {rel} {val}") {
-        $this->clause_cnt("WHERE", "OR", $cam, $rel, $val, $pattern);
-    }
-
-    /**
-    * Función para añadir condiciones en la clausula HAVING (Inicializa la clausula)
-    *
-    */
-    function having($cam, $rel, $val, $pattern="{cam} {rel} {val}") {
-        $this->clause_cnt("HAVING", "", $cam, $rel, $val, $pattern);
-    }
-
-    /**
-    * Función para añadir condiciones en la clausula HAVING (Une condiciones con el AND)
-    */
-    function having_and($cam, $rel, $val, $pattern="{cam} {rel} {val}") {
-        $this->clause_cnt("HAVING", "AND", $cam, $rel, $val, $pattern);
-    }
-
-    /**
-    * Función para añadir condiciones en la clausula HAVING (Une condiciones con el OR)
-    */
-    function having_or($cam, $rel, $val, $pattern="{cam} {rel} {val}") {
-        $this->clause_cnt("HAVING", "OR", $cam, $rel, $val, $pattern);
+        $this->con->query("SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
     }
 }
 
+class Insert {
+    private $con;
+    private $tabla;
+    private $campos = [];
+    private $valores = [];
 
-
-class Insert extends Conexion {
-    /**
-    * Consulta SQL
-    */
-    public $sql;
-
-    /**
-    * Arreglo de valores para los VALUES
-    */
-    public $binds_values;
-
-    /**
-     * VALUES para la inserción
-     */
-    public $values;
-
-    /**
-    * Constructor
-    *
-    * @param object $con Instancia de la clase conexion
-    * @param string $sql Consulta de inicio
-    * @return void Solo inicializa el objeto PDO $con y los valores requeridos
-    * para armar el INSERT
-    */
-    function __construct($con, $sql) {
+    public function __construct($con, $tabla) {
         $this->con = $con;
-
-        $this->sql          = $sql;
-        $this->binds_values = array();
-
-        $this->values = "";
+        $this->tabla = $tabla;
     }
 
-    /**
-    * Función para añadir VALUE de inserción
-    *
-    * @param string $val Valor para condición
-    * @param string $pattern Servirá para maquetar el puntero del valor a insertar
-    * @return void Añadidura de VALUE
-    */
-    function value($val, $pattern="{val}") {
-        $values       = $this->values;
-        $binds_values = $this->binds_values;
+    public function create($campo, $valor) {
+        $this->campos[] = $campo;
+        $this->valores[] = $valor;
+        return $this;
+    }
 
-        if ($values) {
-            $values = "$values, $pattern";
-        }
-        else {
-            $values = $pattern;
+    public function getQuery() {
+        if (empty($this->campos)) {
+            throw new Exception("No se han especificado campos para insertar.");
         }
 
-        $count = 0;
+        $camposStr = implode(", ", $this->campos);
+        $placeholders = implode(", ", array_map(fn($i) => ":param$i", array_keys($this->valores)));
 
-        $values = preg_replace('/{val}/', "?", $values, -1, $count);
+        return "INSERT INTO {$this->tabla} ($camposStr) VALUES ($placeholders)";
+    }
 
-        if ($count > 1) {
-            for ($i = 1; $i < $count; $i++) {
-                $binds_values[] = $val;
+    public function execute() {
+        $sql = $this->getQuery();
+        $stmt = $this->con->prepare($sql);
+        $params = [];
+            foreach ($this->valores as $i => $valor) {
+                $params[":param$i"] = $valor;
             }
-        }
-
-        $binds_values[] = $val;
-
-        $this->values       = $values;
-        $this->binds_values = $binds_values;
-    }
-
-    /**
-    * Ejecución del INSERT
-    *
-    * @return int Numero de filas afectadas
-    */
-    function execute() {
-        $sql          = $this->sql;
-        $binds_values = $this->binds_values;
-
-        $values = $this->values;
-
-        $sql = "$sql VALUES($values)";
-
-        $insert = $this->prepare($sql);
-
-        foreach ($binds_values as $x => $bind_value) {
-            $insert->bindParam($x + 1, $binds_values[$x]);
-        }
-
-        $insert->execute();
-
-        return $insert->rowcount();
+        $stmt->execute($params);
+        return $stmt;
     }
 }
 
+// ------------------------------------
+// Clase SELECT
+// ------------------------------------
 
+class Select {
+    private $con;
+    private $tabla;
+    private $sql;
+    private $joins = "";
+    private $where = [];
+    private $groupby = "";
+    private $having = "";
+    private $orderby = "";
+    private $limit = "";
+    private $params = [];
 
-class Select extends Conexion {
-    /**
-    * Consulta SQL
-    */
-    public $sql;
-
-    /**
-    * Clausulas JOINS
-    */
-    public $joins;
-
-    /**
-    * Clausula GROUP BY
-    */
-    public $groupby;
-
-    /**
-    * Clausula ORDER BY
-    */
-    public $orderby;
-
-    /**
-    * Clausula LIMIT
-    */
-    public $limit;
-
-    /**
-    * Constructor
-    *
-    * @param object $con Instancia de la clase conexion
-    * @param string $sql Consulta de inicio
-    * @return void Solo inicializa el objeto PDO $con y los valores requeridos
-    * para armar el SELECT
-    */
-    function __construct($con, $sql) {
+    public function __construct($con, $tabla, $campos = "*") {
         $this->con = $con;
-
-        $this->sql   = $sql;
-        $this->binds = array();
-
-        $this->joins   = "";
-        $this->where   = "";
-        $this->groupby = "";
-        $this->having  = "";
-        $this->orderby = "";
-        $this->limit   = "";
+        $this->tabla = $tabla;
+        $this->sql = "SELECT $campos FROM $tabla"; // Sin backticks para evitar errores con alias
     }
 
-    /**
-    * Construcción de clausula LEFT JOIN
-    *
-    * @param string $com Composición
-    * @return void Construcción de clausula RIGHT JOIN
-    */
-    function rightjoin($com) {
-        $joins        = $this->joins;
-        $joins       .= "RIGHT JOIN $com\r\n";
-        $this->joins  = $joins;
+    public function join($tipo, $tablaJoin, $condicion) {
+    $tipo = strtoupper($tipo);
+        if (stripos($condicion, 'USING') !== false) {
+            $this->joins .= " $tipo JOIN $tablaJoin $condicion";
+        } else {
+            $this->joins .= " $tipo JOIN $tablaJoin ON $condicion";
+        }
+        return $this;
     }
 
-    /**
-    * Construcción de clausula LEFT JOIN
-    *
-    * @param string $com Composición
-    * @return void Construcción de clausula LEFT JOIN
-    */
-    function leftjoin($com) {
-        $joins        = $this->joins;
-        $joins       .= "LEFT JOIN $com\r\n";
-        $this->joins  = $joins;
+
+    public function where($campo, $operador, $valor) {
+        $this->where[] = [$campo, $operador, $valor];
+        return $this;
     }
 
-    /**
-    * Construcción de clausula INNER JOIN
-    *
-    * @param string $com Composición
-    * @return void Construcción de clausula INNER JOIN
-    */
-    function innerjoin($com) {
-        $joins        = $this->joins;
-        $joins       .= "INNER JOIN $com\r\n";
-        $this->joins  = $joins;
+    public function groupby($group) {
+        $this->groupby = "GROUP BY $group";
+        return $this;
     }
 
-    /**
-    * Construcción de clausula GROUP BY
-    *
-    * @param string $com Composición
-    * @return void Construcción de clausula GROUP BY
-    */
-    function groupby($com) {
-        $groupby = "GROUP BY $com";
-
-        $this->groupby = $groupby;
+    public function having($condicion) {
+        $this->having = "HAVING $condicion";
+        return $this;
     }
 
-    /**
-    * Construcción de clausula ORDER BY
-    *
-    * @param string $com Composición
-    * @return void Construcción de clausula ORDER BY
-    */
-    function orderby($com) {
-        $orderby = "ORDER BY $com";
-
-        $this->orderby = $orderby;
+    public function orderby($orden) {
+        $this->orderby = "ORDER BY $orden";
+        return $this;
     }
 
-    /**
-    * Construcción de clausula LIMIT
-    *
-    * @param string $com Composición
-    * @return void Construcción de clausula LIMIT
-    */
-    function limit($com) {
-        $limit = "LIMIT $com";
-
-        $this->limit = $limit;
+    public function limit($limite) {
+        $this->limit = "LIMIT $limite";
+        return $this;
     }
 
-    /**
-     * Obtención de Consulta
-     * @return string Consulta
-     */
-    function getQuery() {
-        $sql     = $this->sql;
-        $joins   = $this->joins;
-        $where   = $this->where;
-        $groupby = $this->groupby;
-        $having  = $this->having;
-        $orderby = $this->orderby;
-        $limit   = $this->limit;
+    private function getQuery() {
+        $sql = $this->sql;
 
-        if ($joins) {$sql = "$sql\r\n$joins";}
-        if ($where) {$sql = "$sql\r\n$where";}
-        if ($groupby) {$sql = "$sql\r\n$groupby";}
-        if ($having) {$sql = "$sql\r\n$having";}
-        if ($orderby) {$sql = "$sql\r\n$orderby";}
-        if ($limit) {$sql = "$sql\r\n$limit";}
+        if ($this->joins) {
+            $sql .= "\n$this->joins";
+        }
+
+        // Limpiar parámetros antes de reconstruirlos
+        $this->params = [];
+
+        if (!empty($this->where)) {
+            $condiciones = array_map(function ($cond) {
+                return "{$cond[0]} {$cond[1]} ?";
+            }, $this->where);
+
+            $sql .= "\nWHERE " . implode(" AND ", $condiciones);
+
+            foreach ($this->where as $cond) {
+                $this->params[] = $cond[2];
+            }
+        }
+
+        if ($this->groupby) $sql .= "\n$this->groupby";
+        if ($this->having)  $sql .= "\n$this->having";
+        if ($this->orderby) $sql .= "\n$this->orderby";
+        if ($this->limit)   $sql .= "\n$this->limit";
 
         return $sql;
     }
 
-    /**
-    * Ejecución del SELECT
-    *
-    * @return array Arreglo bidimensional
-    */
-    function execute() {
-        $data = array();
+    public function fetchAll() {
+        $stmt = $this->con->prepare($this->getQuery());
+        $stmt->execute($this->params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
-        $sql   = $this->getQuery();
-        $binds = $this->binds;
-
-        $select = $this->prepare($sql);
-
-        foreach ($binds as $x => $bind) {
-            $select->bindParam($x + 1, $binds[$x]);
-        }
-
-        $select->execute();
-
-        if ($select->rowcount()) {
-            while ($row = $select->fetch(PDO::FETCH_ASSOC)) {
-                $subData = array();
-
-                foreach ($row as $x => $field) {
-                    $subData[]   = $row[$x];
-                    $subData[$x] = $row[$x];
-                }
-
-                $data[] = $subData;
-            }
-        }
-
-        return $data;
+    public function fetch() {
+        $stmt = $this->con->prepare($this->getQuery());
+        $stmt->execute($this->params);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 }
 
+// ------------------------------------
+// Clase UPDATE
+// ------------------------------------
 
+class Update {
+    private $con;
+    private $tabla;
+    private $campos = [];
+    private $where = "";
+    private $params = [];
 
-class Update extends Conexion {
-    /**
-    * Consulta SQL
-    */
-    public $sql;
-
-    /**
-    * Arreglo de valores para los SETS
-    */
-    public $binds_sets;
-
-    /**
-     * SETS para la actualización
-     */
-    public $sets;
-
-    /**
-    * Constructor
-    *
-    * @param object $con Instancia de la clase conexion
-    * @param string $sql Consulta de inicio
-    * @return void Solo inicializa el objeto PDO $con y los valores requeridos
-    * para armar el UPDATE
-    */
-    function __construct($con, $sql) {
+    function __construct($con, $tabla) {
         $this->con = $con;
-
-        $this->sql        = $sql;
-        $this->binds      = array();
-        $this->binds_sets = array();
-
-        $this->sets  = "";
-        $this->where = "";
+        $this->tabla = $tabla;
     }
 
-    /**
-    * Función para añadir SET de actualización
-    *
-    * @param string $cam Campo condición
-    * @param string $val Valor para condición
-    * @param string $pattern Servirá para maquetar el puntero del valor de condición
-    * @return void Añadidura de SET
-    */
-    function set($cam, $val, $pattern="{val}") {
-        $sets       = $this->sets;
-        $binds_sets = $this->binds_sets;
-
-        if ($sets) {
-            $sets = "$sets, $cam = $pattern";
-        }
-        else {
-            $sets = "$cam = $pattern";
-        }
-
-        $count = 0;
-
-        $sets = preg_replace('/{val}/', "?", $sets, -1, $count);
-
-        if ($count > 1) {
-            for ($i = 1; $i < $count; $i++) {
-                $binds_sets[] = $val;
-            }
-        }
-
-        $binds_sets[] = $val;
-
-        $this->sets       = $sets;
-        $this->binds_sets = $binds_sets;
+    function set($campo, $valor) {
+        $this->campos[$campo] = $valor;
+        return $this;
     }
 
-    /**
-    * Ejecución del UPDATE
-    *
-    * @return int Numero de filas afectadas
-    */
-    function execute() {
-        $sql        = $this->sql;
-        $binds      = $this->binds;
-        $binds_sets = $this->binds_sets;
-
-        $sets  = $this->sets;
-        $where = $this->where;
-
-        $sql = "$sql SET $sets";
-
-        if ($where) {
-            $sql = "$sql\r\n$where";
-        }
-
-        $update = $this->prepare($sql);
-
-        foreach ($binds_sets as $x => $bind_set) {
-            $update->bindParam($x + 1, $binds_sets[$x]);
-        }
-
-        foreach ($binds as $x => $bind) {
-            $update->bindParam((count($binds_sets)) + $x + 1, $binds[$x]);
-        }
-
-        $update->execute();
-
-        return $update->rowcount();
+    function where($campo, $operador, $valor = null) {
+    $this->where = "WHERE `$campo` $operador" . ($valor !== null ? " ?" : "");
+    if ($valor !== null) {
+        $this->params[] = $valor;
     }
+    return $this;
 }
 
 
+function where_and($campo, $operador, $valor = null) {
+    $usaParametro = !in_array(strtoupper($operador), ['IS', 'IS NOT']);
 
-class Delete extends Conexion {
-    /**
-    * Consulta SQL
-    */
-    public $sql;
+    if (!$this->where) {
+        $this->where = "WHERE `$campo` $operador" . ($usaParametro ? " ?" : "");
+    } else {
+        $this->where .= " AND `$campo` $operador" . ($usaParametro ? " ?" : "");
+    }
 
-    /**
-    * Constructor
-    *
-    * @param object $con Instancia de la clase conexion
-    * @param string $sql Consulta de inicio
-    * @return void Solo inicializa el objeto PDO $con y los valores requeridos
-    * para armar el DELETE
-    */
-    function __construct($con, $sql) {
+    if ($usaParametro && $valor !== null) {
+        $this->params[] = $valor;
+    }
+
+    return $this;
+}
+
+
+    
+    function getQuery() {
+    if (empty($this->campos)) {
+        throw new Exception("Error: No hay campos para actualizar.");
+    }
+
+    $asignaciones = [];
+    $setParams = []; // separa los params del SET
+    foreach ($this->campos as $campo => $valor) {
+        $asignaciones[] = "`$campo` = ?";
+        $setParams[] = $valor;
+    }
+
+    $sql = "UPDATE `$this->tabla` SET " . implode(", ", $asignaciones);
+    if ($this->where) {
+        $sql .= " " . $this->where;
+    }
+
+    // Combinar: primero los del SET, luego los del WHERE
+    $this->params = array_merge($setParams, $this->params);
+
+    return $sql;
+    }
+
+function execute() {
+    $query = $this->getQuery();
+    echo "SQL: " . $query . "<br>";
+    echo "Params: ";
+    print_r($this->params);
+    
+    $stmt = $this->con->prepare($query);
+    $stmt->execute($this->params);
+    return $stmt;
+}
+
+
+}
+
+// ------------------------------------
+// Clase DELETE
+// ------------------------------------
+
+class Delete {
+    private $con;
+    private $tabla;
+    private $where = "";
+    private $params = [];
+
+    function __construct($con, $tabla) {
         $this->con = $con;
-
-        $this->sql   = $sql;
-        $this->binds = array();
-
-        $this->where = "";
+        $this->tabla = $tabla;
     }
 
-    /**
-    * Ejecución del DELETE
-    *
-    * @return int Numero de filas afectadas
-    */
-    function execute() {
-        $sql   = $this->sql;
-        $binds = $this->binds;
+    function where($condicion, $param = []) {
+    $this->where = "WHERE $condicion";
 
-        $where = $this->where;
-
-        if ($where) {
-            $sql = "$sql\r\n$where";
-        }
-
-        $delete = $this->prepare($sql);
-
-        foreach ($binds as $x => $bind) {
-            $delete->bindParam($x + 1, $binds[$x]);
-        }
-
-        $delete->execute();
-
-        return $delete->rowcount();
+    if (!is_array($param)) {
+        $param = [$param];
     }
+    $this->params = array_merge($this->params, $param);
+    return $this;
 }
 
-?>
+
+    function getQuery() {
+        $sql = "DELETE FROM `$this->tabla`";
+        if ($this->where) {
+            $sql .= " " . $this->where;
+        }
+        return $sql;
+    }
+
+    function execute() {
+        $stmt = $this->con->prepare($this->getQuery());
+        $stmt->execute($this->params);
+        return $stmt;
+    }
+}
