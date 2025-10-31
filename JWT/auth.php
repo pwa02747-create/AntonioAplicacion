@@ -5,9 +5,9 @@ require "config/index.php";
 $nombre_usuario = $_POST["usuario"];
 $contrasena     = $_POST["contrasena"];
 
-$select = $con->select("usuarios", "Id_Usuario, Tipo_Usuario, Preferencias, EmailToken");
-$select->where("Nombre_Usuario", "=", $nombre_usuario);
-$select->where_and("Contrasena", "=", $contrasena);
+$select = $con->select("usuarios", "idUsuario, usuario, password, rol, EmailToken");
+$select->where("usuario", "=", $nombre_usuario);
+$select->where_and("password", "=", $contrasena);
 
 $usuarios = $select->execute();
 
