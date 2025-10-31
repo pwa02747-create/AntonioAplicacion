@@ -98,7 +98,7 @@ if (!$tokenDevice) {
     echo json_encode(["status" => "ok"]);    exit;
 }
 
-elseif (isset($_GET["Vehiculo"])) {
+elseif (isset($_GET["Vehiculos"])) {
     $select1 = $con->select("vehiculos");
     $carros = $select1->fetchAll();
 
@@ -171,183 +171,6 @@ elseif (isset($_GET['obtenerVehiculo'])) {
     } 
 }   
     
-elseif (isset($_GET["Emparejamiento"])) {    
-    $offset = isset($_GET["start"]) ? intval($_GET["start"]) : 0;
-    $limit  = isset($_GET["length"]) ? intval($_GET["length"]) : 10;
-    $search = isset($_GET["search"]["value"]) ? $_GET["search"]["value"] : '';
-
-    $inner = $con->select("movimientosetiquetas",
-        "movimientos.idMovimientos, movimientos.monto, movimientos.fechaHora,
-         IFNULL(GROUP_CONCAT(etiquetas.nombreEtiqueta), 'Sin Etiqueta') AS etiquetas"
-    ); 
-    $inner->join("LEFT", "movimientos", "USING(idMovimientos)");
-    $inner->join("LEFT", "etiquetas", "USING(idEtiqueta)");
-    $inner->groupby("movimientos.idMovimientos, movimientos.monto, movimientos.fechaHora");
-    $inner->orderby("movimientos.monto DESC");
-
-    if (is_numeric($offset) && is_numeric($limit)) {
-        $inner->limit("$offset, $limit");
-    }
-
-    $movimientos = $inner->fetchAll();
-    $total = count($movimientos);
-    foreach ($movimientos as $x => $movimiento) {
-        $movimientos[$x]["acciones"] = '
-            <a class="btn btn-primary me-2" ng-click="modificarMovimiento('.$movimiento["idMovimientos"].')">
-                <i class="bi bi-pencil"></i>
-                <span class="d-none d-lg-block d-xl-block">Editar</span>
-            </a>
-            <a class="btn btn-danger" ng-click="eliminarMovimiento('.$movimiento["idMovimientos"].')">
-                <i class="bi bi-trash"></i>
-                <span class="d-none d-lg-block d-xl-block">Eliminar</span>
-            </a>';
-    }
-
-    echo json_encode(array(
-        "recordsTotal"    => $total,
-        "recordsFiltered" => $total,
-        "data"            => $movimientos
-    ));
-    exit;
-}
-elseif(isset($_GET['guardarMovimientos'])){
-try {
-    $con->query("ALTER TABLE movimientos MODIFY COLUMN idMovimientos INT AUTO_INCREMENT")->execute();
-} catch (PDOException $e) {}
-    $input = json_decode(file_get_contents('php://input'), true);
-    
-    $monto = $input['monto'] ?? null;
-    $fecha = $input['fechaHora'] ?? null;
-    
-if (!empty($monto) || !empty($fecha)) {
-    $insert = $con->insert('movimientos');
-    $insert->create('monto', $monto);
-    $insert->create('fechaHora', $fecha);
-    $insert->execute();
-        
-    $title = 'Notificación';
-    $body  = 'Nuevo Movimiento Guardado, Monto: ' . $monto . " y fecha: " . $fecha;
-    $Resultado = EnviarNotificacion($con, $id_usuario, $title, $body);
-    echo json_encode(["status" => "ok", "resultado" => $Resultado]);    exit;
-    }
-}
-elseif(isset($_GET['eliminarMovimientos'])){
-    $input = json_decode(file_get_contents("php://input"), true);
-    $id = $input['id']; 
-
-    $delete = $con ->delete('movimientos');
-    $delete->where('idMovimientos = ?', [$id]);
-    $delete->execute();
-    
-    $title = 'Notificación';
-    $body  = 'Movimiento N° '.$id.' Eliminado';
-    $Resultado = EnviarNotificacion($con, $id_usuario, $title, $body);
-    echo json_encode(["status" => "ok", "Notificacion" => $Resultado]);
-    exit;
-}
-elseif (isset($_GET['obtenerMovimiento'])) {
-    $id = $_GET['id'] ?? null;
-    if (!$id) {
-        http_response_code(400);
-        echo json_encode(["status" => "error", "mensaje" => "ID no especificado"]);
-        exit;
-    }
-    $Movimiento = $con->select("movimientos")->where("idMovimientos", "=", $id)->fetch();
-    
-     if ($Movimiento) {
-        // Convertir el formato de fecha de Y-m-d a d-m-Y
-        if (!empty($Movimiento["fechaHora"])) { $fechaObj = DateTime::createFromFormat('Y-m-d', $Movimiento["fechaHora"]);
-            if ($fechaObj) { $Movimiento["fechaHora"] = $fechaObj->format('d-m-Y'); }
-        }
-        echo json_encode($Movimiento);    exit;
-    }  else {
-        http_response_code(404);
-        echo json_encode(["status" => "error", "mensaje" => "Movimiento no encontrado"]);
-        exit;
-    } 
-}
-elseif (isset($_GET["movimientosetiquetas"])) {
-    try {
-        $offset = isset($_GET["start"]) ? intval($_GET["start"]) : 0;
-        $limit  = isset($_GET["length"]) ? intval($_GET["length"]) : 10;
-        $search = isset($_GET["search"]["value"]) ? $_GET["search"]["value"] : '';
-
-        $selectTotal = $con->select("movimientosetiquetas", "COUNT(*) AS total");
-        $total = $selectTotal->fetch();
-        $selectFiltered = $con->select("movimientosetiquetas", "COUNT(*) AS total");
-        if (!empty($search)) {
-            $selectFiltered->where("idMovimientoEtiqueta", "LIKE", "%$search%");
-        }
-        $filtered = $selectFiltered->fetch();
-
-        $order = $con->select("movimientosetiquetas",
-            "idMovimientoEtiqueta,
-             idMovimientos,
-             idEtiqueta"
-        );
-        $order->groupby("idMovimientoEtiqueta, idMovimientos, idEtiqueta");
-        $order->limit("$offset, $limit");
-
-        $movimientosetiquetas = $order->fetchAll();
-        foreach ($movimientosetiquetas as $x => $movimientosetiqueta) {
-            $movimientosetiquetas[$x]["acciones"] = '
-                <a class="btn btn-danger" ng-click="eliminarMovimientoEtiqueta(' . $movimientosetiqueta["idMovimientoEtiqueta"] . ')">
-                    <i class="bi bi-trash"></i>
-                    <span class="d-none d-lg-block d-xl-block">Eliminar</span>
-                </a>';
-        }
-        echo json_encode(array(
-            "recordsTotal"    => $total["total"],
-            "recordsFiltered" => $filtered["total"],
-            "data"            => $movimientosetiquetas
-        ));
-        exit;
-    } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode(["error" => "❌ Error interno: " . $e->getMessage()]);
-        exit;
-    } 
- echo json_encode(["status" => "ok"]);
- exit;
-}   
-elseif(isset($_GET['GuardarMovimientosEtiquetas'])){   
- try {
-        $con->query("ALTER TABLE movimientosetiquetas MODIFY COLUMN idMovimientoEtiqueta INT AUTO_INCREMENT")->execute();
-    } catch (PDOException $e) {}
-    
-    $input = json_decode(file_get_contents('php://input'), true);
-    $idMovimiento = $input['idMovimiento'] ?? null;
-    $idEtiqueta = $input['idEtiqueta'] ?? null;
-
-    if(!empty($idMovimiento) && !empty($idEtiqueta)){
-        $insert = $con->insert('movimientosetiquetas');
-        $insert->create('idMovimientos', $idMovimiento);
-        $insert->create('idEtiqueta', $idEtiqueta);
-        $insert ->execute();
-        
-        $title = "Notificación";
-        $body = "Movimientos-Etiqueta: ID del Movimiento = " . $idMovimiento . " + ID de la Etiqueta = " . $idEtiqueta . " [ Guardado ]";
-        $Resultado = EnviarNotificacion($con, $id_usuario, $title, $body);
-        echo json_encode(["status" => "ok", "Notificacion" => $Resultado]); exit;
-    } else {
-        $title = "Notificación";
-        $body = "Error al guardar en: Movimientos-Etiqueta";
-        echo json_encode(["status" => "Error al guardar"]); exit;
-    }
-}
-elseif(isset($_GET['eliminarMovimientosEtiqueta'])){
-$id = $_GET['id']; 
-
-    $delete = $con ->delete('movimientosetiquetas');
-    $delete->where('idMovimientoEtiqueta = ?', [$id]);
-    $delete->execute();
-
-    $title = "Notificación";
-    $body = "Movimientos-Etiqueta eliminado: ".$id;
-    $Resultado = EnviarNotificacion($con, $id_usuario, $title, $body);
-    echo json_encode(["status" => "ok", "Notificacion" => $Resultado]); 
- exit;
-}
 elseif(isset($_GET['Notificaciones'])){
     $offset = isset($_GET["start"]) ? intval($_GET["start"]) : 0;
     $limit  = isset($_GET["length"]) ? intval($_GET["length"]) : 10;
@@ -371,71 +194,19 @@ elseif(isset($_GET['Notificaciones'])){
     ));
     exit;
 }
-elseif(isset($_GET["Insertar_Notificacion"])){
-    try {
-        $con->query("ALTER TABLE notificaciones MODIFY COLUMN Id_Notificacion INT AUTO_INCREMENT")->execute();
-    } catch (PDOException $e) {}
-    
-    $input = json_decode(file_get_contents("php://input"), true);
-    $id = $input['id'] ?? null;
-    $nombreEtiqueta = $input['nombreEtiqueta'] ?? null;
-    $tabla = $input['tabla'] ?? null;
-    $monto = $input['monto'] ?? null;
-    $fechaHora = $input['fechaHora'] ?? null;
-    $tipoAccion = $input['tipoAccion'] ?? null;
-    
-    if ($tabla === "etiquetas" && $tipoAccion === 'Modificacion') {
-        $datos = [
-            "tabla" => "etiquetas", "id" => $id,
-            "nombreEtiqueta" => $nombreEtiqueta, "tipoAccion" => 'Modificacion'
-        ];
-    } elseif ($tabla === "movimientos"  && $tipoAccion === 'Modificacion') {
-        $datos = [
-            "tabla" => "movimientos", "id" => $id, "monto" => $monto, 
-            "fechaHora" => $fechaHora, "tipoAccion" => 'Modificacion'
-        ];
-    } elseif($tabla === "etiquetas" && $tipoAccion === 'Eliminacion'){
-        $datos = ["tabla" => "etiquetas" ,"id" => $id, "tipoAccion" => 'Eliminacion'];
-    } elseif($tabla === 'movimientos' && $tipoAccion === 'Eliminacion'){
-        $datos = ["tabla" => "movimientos" ,"id" => $id, "tipoAccion" => 'Eliminacion'];
-    }
-    
-    $nombreQuery = $con -> select("usuarios","Nombre_Usuario");
-    $nombreQuery -> where("Id_Usuario", "=", $id_usuario);
-    $nombre = $nombreQuery -> fetch();
-    $nombreUsuario = $nombre['Nombre_Usuario'];
- 
-    $fecha = date("Y-m-d H:i:s"); 
-    $insert =  $con -> Insert("notificaciones");
-    $insert -> create("Id_Usuario", $id_usuario);    
-    $insert -> create("Tipo", "Solicitud de {$tipoAccion} en: {$tabla}");
-    $insert -> create("Mensaje", "{$tipoAccion} en {$tabla} ({$id})");    
-    $insert -> create("Datos", json_encode($datos));
-    $insert -> create("Fecha", $fecha);    
-    $insert -> create("Permisos", $acceso);
-    $insert -> create("Estado", "Pendiente");
-    $insert -> create("NombreUsuario", $nombreUsuario);
-    $insert->execute();
-    
-    $title = 'Nueva solicitud';
-    $body = 'El usuario '.$nombreUsuario.' quiere realizar cambios';
-    $Resultado = EnviarNotificacion($con, $id_usuario, $title, $body);
-    echo json_encode(["status" => "ok", "Notificacion" => $Resultado]);
-    exit;
-}
-elseif (isset($_GET['modificarEtiqueta'])) {
+elseif (isset($_GET['modificarVehiculo'])) {
     $input = json_decode(file_get_contents("php://input"), true);
     $id_input = $input['id'] ?? null;
-    $nombreEtiqueta = $input['nombreEtiqueta'] ?? null;
+    $placa = $input['Placa'] ?? null;
 
-    if (!$id_input || !$nombreEtiqueta) {
+    if (!$id_input || !$placa) {
         http_response_code(400);
         echo json_encode(["status" => "error", "mensaje" => "Campos faltantes (id, nombreEtiqueta)"]);
     exit; 
     }
 
     $permisoQuery = $con->select("usuarios");
-    $permisoQuery->where("Id_Usuario", "=", $id_usuario);
+    $permisoQuery->where("idUsuario", "=", $id_usuario);
     $permiso = $permisoQuery->fetch();
     $acceso = $permiso['Permisos'] ?? 'Sin Permisos'; 
  
@@ -452,7 +223,7 @@ if($acceso){
         exit;
     }
 }
-elseif(isset($_GET['modificarMovimiento'])){
+elseif(isset($_GET['modificarMantenimiento'])){
     $input = json_decode(file_get_contents("php://input"), true); 
     $id_input = $input['id'] ?? null;
     $monto = $input['monto'] ?? null;
@@ -490,4 +261,5 @@ if($acceso){
 //     ]); exit;
 // }
 ?>
+
 
