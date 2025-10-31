@@ -14,9 +14,9 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copiar archivos de Composer primero para aprovechar cache
-COPY composer.json 
-# composer.lock ./
+# Copiar solo composer.json (y composer.lock si lo tienes)
+COPY composer.json ./
+# COPY composer.lock ./   # descomenta si agregas composer.lock
 
 # Instalar dependencias PHP y generar autoloader optimizado
 RUN composer install --no-dev --optimize-autoloader
@@ -31,5 +31,5 @@ RUN chown -R www-data:www-data /var/www/html \
 # Exponer puerto 80 para Apache
 EXPOSE 80
 
-# Reiniciar Apache al iniciar el contenedor (opcional)
+# Iniciar Apache al levantar el contenedor
 CMD ["apache2-foreground"]
