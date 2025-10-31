@@ -54,19 +54,19 @@ elseif (isset($_GET["cambiarPreferencias"])) {
     $update->execute();
 }
 
-elseif (isset($_GET["productos"])) {
+elseif (isset($_GET["Vehiculos"])) {
     $offset = $_GET["start"];
     $limit  = $_GET["length"];
     $search = $_GET["search"]["value"];
     
-    $select1 = $con->select("productos", "Id_Producto, Nombre_Producto, Precio, Existencias, IF(Imagen IS NULL, '', 1) AS Imagen");
-    $select1->where("Nombre_Producto", "LIKE", $search);
+    $select1 = $con->select("vehiculos", "id_carro, Placa, Marca, Modelo");
+    $select1->where("Placa", "LIKE", $search);
 
     if (isset($_GET["order"])) {
         $ordercol = $_GET["order"][0]["column"];
         $orderdir = $_GET["order"][0]["dir"];
 
-        $cols = array("Id_Producto", "Nombre_Producto", "Precio", "Existencias");
+        $cols = array("Id_carro", "Placa", "Marca", "Modelo");
         if (isset($cols[$ordercol])) {
             $dir = "ASC";
             if ($orderdir == "desc") {
@@ -81,30 +81,18 @@ elseif (isset($_GET["productos"])) {
         $select1->limit("$offset, $limit");
     }
 
-    $select2 = $con->select("productos", "COUNT(Id_Producto) AS total");
+    $select2 = $con->select("vehiculos", "COUNT(id_carro) AS total");
     $total   = $select2->execute();
 
     $productos = $select1->execute();
 
     foreach ($productos as $x => $producto) {
-        $id_producto = $producto["Id_Producto"];
+        $id_producto = $producto["id_carro"];
 
         $productos[$x]["acciones"] = '<a class="btn btn-primary" href="#/productos/' . $id_producto . '">
             <i class="bi bi-pencil"></i>
                 <span class="d-none d-lg-block d-xl-block">Editar</span>
         </a>';
-
-        $imagen = $producto["Imagen"];
-        if ($imagen) {
-            $productos[$x]["Imagen"] = '<div class="div-producto-imagen" style="cursor: pointer;" data-id="' . $id_producto . '">
-                <div class="text-center mt-2 text-nowrap">
-                    <span class="bg-body-tertiary rounded shadow shadow-sm p-2 bi bi-zoom-in"></span>
-                </div>
-                <div class="mt-1">
-                    <span class="bg-body-tertiary rounded shadow shadow-sm p-2 mt-3 bi bi-image"></span>
-                </div>
-            </div>';
-        }
     }
 
     header("Content-Type: application/json");
@@ -567,3 +555,4 @@ elseif (isset($_GET["graficaVentasTotalesProductos"])) {
 }
 
 ?>
+
