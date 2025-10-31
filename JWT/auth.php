@@ -9,7 +9,7 @@ $contrasena     = $_POST["contrasena"] ?? null;
 // $contrasena     = "123";
 
 if(!nombre_usuario || !$contrena){
-    
+   http_response_code(400); exit;
 }
 
 $select = $con->select("usuarios", "idUsuario, usuario, password, rol, EmailToken, Preferencias");
