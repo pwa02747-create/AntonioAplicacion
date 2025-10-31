@@ -49,25 +49,26 @@ if (count($errores) === 0) {
     }
 }
 
-// try {
-//  $headers = getallheaders();
+try {
+ $headers = getallheaders();
 
-//  if (!isset($headers["Authorization"])) {
-//         throw new Exception("Token requerido", 401);
-//     }
-//     $token = str_replace("Bearer ", "", $headers["Authorization"]);
-//     $decoded = Firebase\JWT\JWT::decode($token, new Firebase\JWT\Key("Test12345", "HS256"));
-//     // echo json_encode(array("message" => "Acceso autorizado", "user_id" => $decoded->sub));
-//     $usuario = explode("/", $decoded->sub);
-//     $id_usuario   = $usuario[0];
-//     $tipo = $usuario[1];
+ if (!isset($headers["Authorization"])) {
+        throw new Exception("Token requerido", 401);
+    }
+    $token = str_replace("Bearer ", "", $headers["Authorization"]);
+    $decoded = Firebase\JWT\JWT::decode($token, new Firebase\JWT\Key("Test12345", "HS256"));
+    // echo json_encode(array("message" => "Acceso autorizado", "user_id" => $decoded->sub));
+    $usuario = explode("/", $decoded->sub);
+    $id_usuario   = $usuario[0];
+    $tipo = $usuario[1];
     
-$id_usuario   = '1';  
-$tipo = 'Admin';    
-    // $permisoQuery = $con->select("usuarios");
-    // $permisoQuery->where("Id_Usuario", "=", $id_usuario);
-    // $permiso = $permisoQuery->fetch();
-    // $acceso = $permiso['Permisos'] ?? 'Sin Permisos'; 
+// $id_usuario   = '1';  
+// $tipo = 'Admin';    
+    
+    $permisoQuery = $con->select("usuarios");
+    $permisoQuery->where("idUsario", "=", $id_usuario);
+    $permiso = $permisoQuery->fetch();
+    $acceso = $permiso['rol'] ?? 'Sin Permisos'; 
     
 header("Content-Type: application/json");
 
@@ -264,6 +265,7 @@ if($acceso){
 //     ]); exit;
 // }
 ?>
+
 
 
 
