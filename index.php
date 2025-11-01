@@ -49,26 +49,26 @@ if (count($errores) === 0) {
     }
 }
 
-try {
- $headers = getallheaders();
+// try {
+//  $headers = getallheaders();
 
- if (!isset($headers["Authorization"])) {
-        throw new Exception("Token requerido", 401);
-    }
-    $token = str_replace("Bearer ", "", $headers["Authorization"]);
-    $decoded = Firebase\JWT\JWT::decode($token, new Firebase\JWT\Key("Test12345", "HS256"));
-    // echo json_encode(array("message" => "Acceso autorizado", "user_id" => $decoded->sub));
-    $usuario = explode("/", $decoded->sub);
-    $id_usuario   = $usuario[0];
-    $tipo = $usuario[1];
+//  if (!isset($headers["Authorization"])) {
+//         throw new Exception("Token requerido", 401);
+//     }
+//     $token = str_replace("Bearer ", "", $headers["Authorization"]);
+//     $decoded = Firebase\JWT\JWT::decode($token, new Firebase\JWT\Key("Test12345", "HS256"));
+//     // echo json_encode(array("message" => "Acceso autorizado", "user_id" => $decoded->sub));
+//     $usuario = explode("/", $decoded->sub);
+//     $id_usuario   = $usuario[0];
+//     $tipo = $usuario[1];
     
-// $id_usuario   = '1';  
-// $tipo = 'Admin';    
+$id_usuario   = '1';  
+$tipo = 'Admin';    
     
-    $permisoQuery = $con->select("usuarios");
-    $permisoQuery->where("idUsuario", "=", $id_usuario);
-    $permiso = $permisoQuery->fetch();
-    $acceso = $permiso['rol'] ?? 'Sin Permisos'; 
+    // $permisoQuery = $con->select("usuarios");
+    // $permisoQuery->where("idUsuario", "=", $id_usuario);
+    // $permiso = $permisoQuery->fetch();
+    // $acceso = $permiso['rol'] ?? 'Sin Permisos'; 
     
 header("Content-Type: application/json");
 
@@ -123,18 +123,26 @@ elseif (isset($_GET["Vehiculos"])) {
     ]);
     exit;
 }
-elseif (isset($_GET["eliminarVehiculo"])) {    
+
+elseif (isset($_GET["eliminarVehiculo"])) {
     $input = json_decode(file_get_contents("php://input"), true);
-    $id = $input['id'] ?? null;
-   
+    $id = $input['id'] ?? ($_GET['id'] ?? null);
+
+    if (!$id) {
+        echo json_encode(["status" => "error", "mensaje" => "Falta el ID del vehículo"]);
+        exit;
+    }
+
     $delete = $con->delete("vehiculos");
     $delete->where('id_carro = ?', [$id]);
-    $delete->execute();   
-    // $title = 'Notificación';
-    // $body  = 'Etiqueta N° '.$id.' Eliminada';
+    $ok = $delete->execute();
 
-    // $Resultado = EnviarNotificacion($con, $id_usuario, $title, $body);
-    echo json_encode(["status" => "ok"]);    exit;
+    if ($ok) {
+        echo json_encode(["status" => "ok", "mensaje" => "Vehículo eliminado correctamente"]);
+    } else {
+        echo json_encode(["status" => "error", "mensaje" => "No se pudo eliminar el vehículo"]);
+    }
+    exit;
 }
     
 elseif (isset($_GET["guardarVehiculo"])) {
@@ -262,6 +270,7 @@ if($acceso){
           "error: "=> $error->getMessage()
     ]); exit;
 }
+
 
 
 
