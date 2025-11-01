@@ -66,7 +66,7 @@ try {
 // $tipo = 'Admin';    
     
     $permisoQuery = $con->select("usuarios");
-    $permisoQuery->where("idUsario", "=", $id_usuario);
+    $permisoQuery->where("idUsuario", "=", $id_usuario);
     $permiso = $permisoQuery->fetch();
     $acceso = $permiso['rol'] ?? 'Sin Permisos'; 
     
@@ -262,3 +262,4 @@ if($acceso){
           "error: "=> $error->getMessage()
     ]); exit;
 }
+
