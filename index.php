@@ -242,7 +242,6 @@ elseif (isset($_GET['modificarVehiculo'])) {
     }
         exit;
     }
-}
     
 elseif(isset($_GET['modificarMantenimiento'])){
     $input = json_decode(file_get_contents("php://input"), true); 
@@ -279,6 +278,7 @@ if($acceso){
           "error: "=> $error->getMessage()
     ]); exit;
 }
+
 
 
 
