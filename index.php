@@ -220,7 +220,7 @@ elseif (isset($_GET['modificarVehiculo'])) {
     $permisoQuery = $con->select("usuarios");
     $permisoQuery->where("idUsuario", "=", $id_usuario);
     $permiso = $permisoQuery->fetch();
-    $acceso = $permiso['Permisos'] ?? 'Sin Permisos'; 
+    $acceso = $permiso['rol'] ?? 'Sin Permisos'; 
  
 if($acceso){
     if ($acceso === 'Admin') {
@@ -246,9 +246,9 @@ elseif(isset($_GET['modificarMantenimiento'])){
         echo json_encode(["status" => "error", "mensaje" => "Campos faltantes (id, monto, fecha)"]); exit; 
     }
     $permisoQuery = $con->select("usuarios");
-    $permisoQuery->where("Id_Usuario", "=", $id_usuario);
+    $permisoQuery->where("idUsuario", "=", $id_usuario);
     $permiso = $permisoQuery->fetch();
-    $acceso = $permiso['Permisos'] ?? 'Sin Permisos'; 
+    $acceso = $permiso['rol'] ?? 'Sin Permisos'; 
  
 if($acceso){
     if ($acceso === 'Admin') {
@@ -270,6 +270,7 @@ if($acceso){
 //           "error: "=> $error->getMessage()
 //     ]); exit;
 // }
+
 
 
 
