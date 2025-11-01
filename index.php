@@ -204,37 +204,43 @@ elseif(isset($_GET['Notificaciones'])){
     ));
     exit;
 }
+    
 elseif (isset($_GET['modificarVehiculo'])) {
     $input = json_decode(file_get_contents("php://input"), true);
+
     $id_input = $input['id'] ?? null;
     $placa = $input['Placa'] ?? null;
     $marca = $input['Marca'] ?? null;
     $modelo = $input['Modelo'] ?? null;
 
-    if (!$id_input || !$placa || !marca || !modelo ) {
+    // ✅ Validación básica
+    if (!$id_input || !$placa || !$marca || !$modelo) {
         http_response_code(400);
-        echo json_encode(["status" => "error", "mensaje" => "Campos faltantes (id, nombreEtiqueta)"]);
-    exit; 
+        echo json_encode(["status" => "error", "mensaje" => "Faltan campos obligatorios"]);
+        exit;
     }
 
-    $permisoQuery = $con->select("usuarios");
-    $permisoQuery->where("idUsuario", "=", $id_usuario);
-    $permiso = $permisoQuery->fetch();
-    $acceso = $permiso['rol'] ?? 'Sin Permisos'; 
- 
-if($acceso){
-    if ($acceso === 'Admin') {
-        $mod_veh = modificarVeh($con, $id_input, $placa, $marca, $modelo);
-        // $Resultado = EnviarNotificacion($con, $id_usuario, $title, $body);
-        echo json_encode(["status" => "Exito", "accion" => $mod_veh]);
+    // ✅ Validar JWT (debe estar hecho al inicio de tu auth.php)
+    // Ejemplo (si ya tienes algo como $id_usuario disponible después de verificar el token):
+    if (!isset($id_usuario)) {
+        http_response_code(401);
+        echo json_encode(["status" => "error", "mensaje" => "Token no válido o usuario no autenticado"]);
         exit;
-    }   
-} else {
-        http_response_code(403);
-        echo json_encode(["status" => "error", "mensaje" => "Acceso denegado"]);
+    }
+
+    // ✅ Cualquier usuario autenticado puede modificar
+    $resultado = modificarVeh($con, $id_input, $placa, $marca, $modelo);
+
+    if (strpos($resultado, "modificado") !== false) {
+        echo json_encode(["status" => "ok", "mensaje" => $resultado]);
+    } else {
+        http_response_code(404);
+        echo json_encode(["status" => "error", "mensaje" => "No se encontró el vehículo"]);
+    }
         exit;
     }
 }
+    
 elseif(isset($_GET['modificarMantenimiento'])){
     $input = json_decode(file_get_contents("php://input"), true); 
     $id_input = $input['id'] ?? null;
@@ -270,6 +276,7 @@ if($acceso){
           "error: "=> $error->getMessage()
     ]); exit;
 }
+
 
 
 
