@@ -1,7 +1,7 @@
 <?php require_once "JWT/config/index.php";
 // ob_start(); 
 
-function modificarVeh($con, $id_input, $placa, $marca, $modelo){        
+function modificarVeh($con, $id_input, $placa, $marca, $modelo) {        
     $search = $con->select("vehiculos");
     $search->where("id_carro", "=", $id_input);
     $fetch = $search->fetch();
@@ -13,8 +13,11 @@ function modificarVeh($con, $id_input, $placa, $marca, $modelo){
         $update->set("Modelo", $modelo);
         $update->where("id_carro", "=", $id_input);
         $update->execute();       
-        return "vehiculo: '$placa' de marca: ' $marca  del N° $id_input modificado.";
-    } else { return "Modificación fallida. Movimiento no encontrado.";  }
+
+        return "Vehículo '$placa' de marca '$marca' (ID: $id_input) modificado correctamente.";
+    } else {
+        return "Modificación fallida. Vehículo no encontrado.";
+    }
 }
 
 function EnviarNotificacion($con, $id_usuario, $title, $body){    
@@ -276,6 +279,7 @@ if($acceso){
           "error: "=> $error->getMessage()
     ]); exit;
 }
+
 
 
 
