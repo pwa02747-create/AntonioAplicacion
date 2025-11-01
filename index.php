@@ -263,13 +263,14 @@ if($acceso){
         exit;
     }
 }     
-} catch (Exception $error) {
-    http_response_code(401);
-    echo json_encode([
-         "token: " => "Token invalido.", 
-          "error: "=> $error->getMessage()
-    ]); exit;
-}
+// } catch (Exception $error) {
+//     http_response_code(401);
+//     echo json_encode([
+//          "token: " => "Token invalido.", 
+//           "error: "=> $error->getMessage()
+//     ]); exit;
+// }
+
 
 
 
