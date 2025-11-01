@@ -93,8 +93,8 @@ if (!$tokenDevice) {
     http_response_code(400); exit;
 }
     $update = $con -> update("usuarios");
-    $update ->set("Token_Device", $tokenDevice);
-    $update ->where("Id_Usuario", "=", $id_usuario);
+    $update ->set("FBToken", $tokenDevice);
+    $update ->where("idUsuario", "=", $id_usuario);
     $update ->execute();
  
     echo json_encode(["status" => "ok"]);    exit;
@@ -262,5 +262,6 @@ if($acceso){
           "error: "=> $error->getMessage()
     ]); exit;
 }
+
 
 
