@@ -73,14 +73,14 @@ try {
 header("Content-Type: application/json");
 
 if (isset($_GET["preferencias"])) {
-    $select = $con->select("usuarios", "Id_Usuario, Tipo_Usuario, Preferencias, Token_Tipo, Token_STAT, Permisos");
-    $select->where("Id_Usuario", "=", $id_usuario);
+    $select = $con->select("usuarios", "idUsuario, EmailToken, FBToken, Preferencias, rol");
+    $select->where("idUsuario", "=", $id_usuario);
     echo json_encode($select->fetch());    exit;
 }   
 elseif (isset($_GET["cambiarPreferencias"])) {
     $update = $con->update("usuarios");
     $update->set("Preferencias", $_POST["preferencias"]);
-    $update->where("Id_Usuario", "=", $id_usuario);
+    $update->where("idUsuario", "=", $id_usuario);
     $update->execute();
     echo json_encode(["status" => "ok"]);    exit;
 }    
@@ -262,4 +262,5 @@ if($acceso){
           "error: "=> $error->getMessage()
     ]); exit;
 }
+
 
